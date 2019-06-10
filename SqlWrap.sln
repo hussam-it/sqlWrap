@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Express 15 for Windows Desktop
+VisualStudioVersion = 15.0.27428.2037
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "SqlWrapTest", "SqlWrapTest\SqlWrapTest.vbproj", "{9445BD6D-9053-4B86-B7E8-C9278DBF7D4C}"
+EndProject
+Project("{F184B08F-C81C-45F6-A57F-5ABD9991F28F}") = "SqlWrap", "SqlWrap\SqlWrap.vbproj", "{EFB07D8C-65EB-43C2-A838-406A05A210FF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9445BD6D-9053-4B86-B7E8-C9278DBF7D4C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9445BD6D-9053-4B86-B7E8-C9278DBF7D4C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9445BD6D-9053-4B86-B7E8-C9278DBF7D4C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9445BD6D-9053-4B86-B7E8-C9278DBF7D4C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EFB07D8C-65EB-43C2-A838-406A05A210FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EFB07D8C-65EB-43C2-A838-406A05A210FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EFB07D8C-65EB-43C2-A838-406A05A210FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EFB07D8C-65EB-43C2-A838-406A05A210FF}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {99496714-6C60-4D7F-BB34-44C3A139DE08}
+	EndGlobalSection
+EndGlobal
