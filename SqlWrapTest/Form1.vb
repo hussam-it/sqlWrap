@@ -46,7 +46,7 @@ Public Class Form1
     Private Sub Operation_01()
         Dim Database As New Database(Me.ConnString)
         Try
-            Dim Rows As DataRowCollection = Database.GetRows("Customers", New List(Of String) From {"CustomerID", "Fax"}, New QItems From {New QItem("city", "London", QItem.Types.WHERE_AND)})
+            Dim Rows As DataRowCollection = Database.GetRows("Customers", New List(Of String) From {"CustomerID", "Fax"}, New QItems From {New QItem("city", "London", QItem.Types.WHERE)})
 
             Label1.Text = Database.Query.StatmentString
             Label3.ForeColor = Color.DarkGreen
@@ -70,7 +70,7 @@ Public Class Form1
         Dim Database As New Database(Me.ConnString)
         Dim Result As Object = Nothing
         Try
-            Result = Database.GetFieldValue("Customers", "Fax", New QItems From {New QItem("CustomerId", "BSBEV", QItem.Types.WHERE_AND)})
+            Result = Database.GetFieldValue("Customers", "Fax", New QItems From {New QItem("CustomerId", "BSBEV", QItem.Types.WHERE)})
 
             Label1.Text = Database.Query.StatmentString
             Label3.ForeColor = Color.DarkGreen
@@ -96,7 +96,7 @@ Public Class Form1
             Database.Table.AliasName = "Cust"
             With Database.Table.Query.Items
                 .Add("Cust.CustomerID").Add("Cust.Fax")
-                .Add("Cust.City", "London", QItem.Types.WHERE_AND)
+                .Add("Cust.City", "London", QItem.Types.WHERE)
             End With
 
             With Database.Table.Query.RunQuery
@@ -130,7 +130,7 @@ Public Class Form1
                 .Add("orders.OrderDate")
                 .Add("cust.*")
                 .Add("Orders orders", "orders.CustomerID = cust.CustomerID", QItem.Types.JOIN_LEFT)
-                .Add("cust.CustomerId", "BSBEV", QItem.Types.WHERE_AND)
+                .Add("cust.CustomerId", "BSBEV", QItem.Types.WHERE)
             End With
 
             With Database.Table.Query.RunQuery
@@ -162,7 +162,7 @@ Public Class Form1
             Database.Transaction = Database.Connection.BeginTransaction
             With Database.Query.Items
                 .Add("Fax", "222-444")
-                .Add("CustomerId", "BSBEV", QItem.Types.WHERE_AND)
+                .Add("CustomerId", "BSBEV", QItem.Types.WHERE)
             End With
 
             Result = Database.Table.Query.RunNoneQuery(Query.Types.UPDATE)
@@ -224,7 +224,7 @@ Public Class Form1
             Database.Table.Name = "Region"
             Database.Transaction = Database.Connection.BeginTransaction
             With Database.Query.Items
-                .Add("RegionID", "222", QItem.Types.WHERE_AND)
+                .Add("RegionID", "222", QItem.Types.WHERE)
             End With
             Result = Database.Table.Query.RunNoneQuery(Query.Types.DELETE)
             Database.CommitTrans()
