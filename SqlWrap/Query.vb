@@ -39,7 +39,7 @@ Public Class Query
         DELETE = 4
     End Enum
 
-    Public Enum PrepareTypes
+    Public Enum RenderTypes
         WITH_NAME = 1
         WITHOUT_NAME = 2
     End Enum
@@ -114,12 +114,87 @@ Public Class Query
         Return Zero
     End Function
 
-    Private Function PrepareValue(ByVal QItem As QItem, Optional ByVal PrepareType As PrepareTypes = PrepareTypes.WITH_NAME) As String
+    Private Function GetFieldValue(FieldTable As String, FieldName As String, FieldValue As String, ByVal QItem As QItem) As String
+        If Me.Parent.Connection.State = ConnectionState.Open Then
+
+            Dim SQLstr As New StringBuilder
+            SQLstr.Append("SELECT  data_type AS 'Data Type',character_maximum_length AS 'Max Length' ")
+            SQLstr.Append("FROM information_schema.columns ")
+            SQLstr.Append("WHERE table_name = '" & Me.GetTableName(FieldTable) & "' AND column_name = '" & FieldName & "'")
+
+            With Me.RunQuery(SQLstr.ToString)
+                If .Rows.IsNotEmpty Then
+                    Select Case .Rows.First("Data Type").ToString.ToLower
+                        Case "int", "bigint", "smallint", "tinyint", "real", "float", "money"
+                            If IsNumeric(FieldValue) Then
+                                Select Case .Rows.First("Data Type").ToString.ToLower
+                                    Case "int"
+                                        If Not (FieldValue >= Int32.MinValue And FieldValue <= Int32.MaxValue) Then
+                                            FieldValue = Zero
+                                        End If
+                                    Case "bigint", "money"
+                                        If Not (FieldValue >= Int64.MinValue And FieldValue <= Int64.MaxValue) Then
+                                            FieldValue = Zero
+                                        End If
+                                    Case "smallint"
+                                        If Not (FieldValue >= Int16.MinValue And FieldValue <= Int16.MaxValue) Then
+                                            FieldValue = Zero
+                                        End If
+                                    Case "tinyint"
+                                        If Not (FieldValue >= Byte.MinValue And FieldValue <= Byte.MaxValue) Then
+                                            FieldValue = Zero
+                                        End If
+                                    Case "real"
+
+                                    Case "float"
+
+                                    Case "money"
+
+                                End Select
+                            Else
+                                FieldValue = Zero
+                            End If
+
+                        Case "bit"
+                            If FieldValue = 1 Then
+                                FieldValue = "'True'"
+                            Else
+                                FieldValue = "'False'"
+                            End If
+
+                        Case "datetime", "datetime2", "smalldatetime"
+                            If FieldValue.GetType.Name = "DateTime" Or FieldValue.GetType.Name = "Date" Then
+                                FieldValue = "'" & CType(FieldValue, DateTime).ToString("yyyy-MM-ddTHH:mm:ss", Globalization.CultureInfo.CreateSpecificCulture("en")) & "'"
+                            Else
+                                FieldValue = "'" & FieldValue & "'"
+                            End If
+
+                        Case "char", "nchar", "varchar", "nvarchar", "text", "ntext"
+                            If FieldValue.Length > .Rows.First("Max Length") Then
+                                FieldValue = FieldValue.Substring(Zero, .Rows.First("Max Length"))
+                            End If
+                            FieldValue = FieldValue.Replace("'", "''")
+                            If QItem.Type = QItem.Types.WHERE_LIKE Then
+                                FieldValue = "N'%" & FieldValue & "%'"
+                            Else
+                                FieldValue = "N'" & FieldValue & "'"
+                            End If
+                        Case "uniqueidentifier"
+                            FieldValue = FieldValue.Replace("'", String.Empty)
+                            FieldValue = "'" & FieldValue & "'"
+
+                    End Select
+
+                End If
+            End With
+        End If
+        Return FieldValue
+    End Function
+
+    Private Function RenderFieldValue(ByVal QItem As QItem, Optional ByVal RenderType As RenderTypes = RenderTypes.WITH_NAME) As String
         Dim FieldName As String = QItem.Name
         Dim FieldValue As String = QItem.Value
         Dim FieldTable As String = String.Empty
-        Dim FieldTable2 As String = String.Empty
-        Dim Ind As Boolean = False
         Try
             If FieldName.Contains(".") Then
                 Dim Split As String() = FieldName.Split(".")
@@ -129,99 +204,22 @@ Public Class Query
                 FieldTable = Me.Parent.Name
             End If
 
-            FieldTable2 = Me.GetTableName(FieldTable)
+            FieldValue = Me.GetFieldValue(FieldTable, FieldName, FieldValue, QItem)
 
-            If Me.Parent.Connection.State = ConnectionState.Open Then
-
-                Dim SQLstr As New StringBuilder
-                SQLstr.Append("SELECT  data_type AS 'Data Type',character_maximum_length AS 'Max Length' ")
-                SQLstr.Append("FROM information_schema.columns ")
-                SQLstr.Append("WHERE table_name = '" & FieldTable2 & "' AND column_name = '" & FieldName & "'")
-
-                With Me.RunQuery(SQLstr.ToString)
-                    If .Rows.IsNotEmpty Then
-                        Select Case .Rows.First("Data Type").ToString.ToLower
-                            Case "int", "bigint", "smallint", "tinyint", "real", "float", "money"
-                                If IsNumeric(FieldValue) Then
-                                    Select Case .Rows.First("Data Type").ToString.ToLower
-                                        Case "int"
-                                            If Not (FieldValue >= Int32.MinValue And FieldValue <= Int32.MaxValue) Then
-                                                FieldValue = Zero
-                                            End If
-                                        Case "bigint", "money"
-                                            If Not (FieldValue >= Int64.MinValue And FieldValue <= Int64.MaxValue) Then
-                                                FieldValue = Zero
-                                            End If
-                                        Case "smallint"
-                                            If Not (FieldValue >= Int16.MinValue And FieldValue <= Int16.MaxValue) Then
-                                                FieldValue = Zero
-                                            End If
-                                        Case "tinyint"
-                                            If Not (FieldValue >= Byte.MinValue And FieldValue <= Byte.MaxValue) Then
-                                                FieldValue = Zero
-                                            End If
-                                        Case "real"
-
-                                        Case "float"
-
-                                        Case "money"
-
-                                    End Select
-                                Else
-                                    FieldValue = Zero
-                                End If
-                                Ind = True
-                            Case "bit"
-                                If FieldValue = 1 Then
-                                    FieldValue = "'True'"
-                                Else
-                                    FieldValue = "'False'"
-                                End If
-                                Ind = True
-                            Case "datetime", "datetime2", "smalldatetime"
-                                If FieldValue.GetType.Name = "DateTime" Or FieldValue.GetType.Name = "Date" Then
-                                    FieldValue = "'" & CType(FieldValue, DateTime).ToString("yyyy-MM-ddTHH:mm:ss", Globalization.CultureInfo.CreateSpecificCulture("en")) & "'"
-                                Else
-                                    FieldValue = "'" & FieldValue & "'"
-                                End If
-                                Ind = True
-                            Case "char", "nchar", "varchar", "nvarchar", "text", "ntext"
-                                If FieldValue.Length > .Rows.First("Max Length") Then
-                                    FieldValue = FieldValue.Substring(Zero, .Rows.First("Max Length"))
-                                End If
-                                FieldValue = FieldValue.Replace("'", "''")
-                                If QItem.Type = QItem.Types.WHERE_LIKE OrElse QItem.Type = QItem.Types.WHERE_NOT_LIKE Then
-                                    FieldValue = "N'%" & FieldValue & "%'"
-                                Else
-                                    FieldValue = "N'" & FieldValue & "'"
-                                End If
-
-                                Ind = True
-                            Case "uniqueidentifier"
-                                FieldValue = FieldValue.Replace("'", String.Empty)
-                                FieldValue = "N'" & FieldValue & "'"
-                                Ind = True
-                        End Select
-
+            Select Case RenderType
+                Case RenderTypes.WITH_NAME
+                    If QItem.Type = QItem.Types.WHERE_LIKE Then
+                        Return FieldTable & "." & FieldName & " LIKE " & FieldValue
+                    Else
+                        Return FieldTable & "." & FieldName & QItem.GetOperatorWord & FieldValue
                     End If
-                End With
-            End If
+                Case RenderTypes.WITHOUT_NAME
+                    Return FieldValue
+            End Select
+
         Catch ex As Exception
             Throw
         End Try
-
-        If Ind Then
-            Select Case PrepareType
-                Case PrepareTypes.WITH_NAME
-                    If QItem.Type = QItem.Types.WHERE_LIKE OrElse QItem.Type = QItem.Types.WHERE_NOT_LIKE Then
-                        Return FieldTable & "." & FieldName & " LIKE " & FieldValue
-                    Else
-                        Return FieldTable & "." & FieldName & " = " & FieldValue
-                    End If
-                Case PrepareTypes.WITHOUT_NAME
-                    Return FieldValue
-            End Select
-        End If
 
         Return "''"
     End Function
@@ -230,31 +228,21 @@ Public Class Query
         Dim WhereString As String = String.Empty
         For Each QItem As QItem In Me.Items
             Select Case QItem.Type
-                Case QItem.Types.WHERE_OR
-                    WhereString &= " OR " & Me.PrepareValue(QItem, PrepareTypes.WITH_NAME)
-                Case QItem.Types.WHERE_OR_NOT
-                    WhereString &= " OR NOT " & Me.PrepareValue(QItem, PrepareTypes.WITH_NAME)
-                Case QItem.Types.WHERE_AND
-                    WhereString &= " AND " & Me.PrepareValue(QItem, PrepareTypes.WITH_NAME)
-                Case QItem.Types.WHERE_AND_NOT
-                    WhereString &= " AND NOT " & Me.PrepareValue(QItem, PrepareTypes.WITH_NAME)
+                Case QItem.Types.WHERE
+                    WhereString &= QItem.GetLogicWord & Me.RenderFieldValue(QItem)
+                Case QItem.Types.WHERE_LIKE
+                    WhereString &= QItem.GetLogicWord & Me.RenderFieldValue(QItem)
                 Case QItem.Types.WHERE_IN
-                    WhereString &= " AND " & QItem.Name & " IN (" & QItem.Value & ") "
-                Case QItem.Types.WHERE_NOT_IN
-                    WhereString &= " AND NOT " & QItem.Name & " IN (" & QItem.Value & ") "
-                Case QItem.Types.WHERE_NOT_IN
-                    WhereString &= " AND " & QItem.Value & " " & QItem.Name & " IS NULL "
+                    WhereString &= QItem.GetLogicWord & QItem.Name & " IN (" & QItem.Value & ") "
+                Case QItem.Types.WHERE_IS_NULL
+                    WhereString &= QItem.GetLogicWord & QItem.Name & " IS NULL "
                 Case QItem.Types.WHERE_FREE
                     WhereString &= " (" & QItem.Value & ") "
-                Case QItem.Types.WHERE_LIKE
-                    WhereString &= " AND " & Me.PrepareValue(QItem, PrepareTypes.WITH_NAME)
-                Case QItem.Types.WHERE_NOT_LIKE
-                    WhereString &= " AND NOT " & Me.PrepareValue(QItem, PrepareTypes.WITH_NAME)
             End Select
         Next
 
-        RemoveFirst(WhereString, " AND ")
-        RemoveFirst(WhereString, " OR ")
+        RemoveFirst(WhereString, QItem.GetLogicWord(QItem.Logics.AND_))
+        RemoveFirst(WhereString, QItem.GetLogicWord(QItem.Logics.OR_))
 
         Return WhereString
     End Function
@@ -340,7 +328,7 @@ Public Class Query
 
         For Each QItem As QItem In Me.Items
             If QItem.Type = QItem.Types.FIELD Then
-                StatmentString &= Me.PrepareValue(QItem, PrepareTypes.WITHOUT_NAME) & ","
+                StatmentString &= Me.RenderFieldValue(QItem, RenderTypes.WITHOUT_NAME) & ","
             End If
         Next
 
@@ -362,7 +350,7 @@ Public Class Query
         StatmentString = "UPDATE " & Me.Parent.DbSchema & "." & Me.Parent.Name & " SET "
         For Each QItem As QItem In Me.Items
             If QItem.Type = QItem.Types.FIELD Then
-                StatmentString &= Me.PrepareValue(QItem, PrepareTypes.WITH_NAME) & ","
+                StatmentString &= Me.RenderFieldValue(QItem) & ","
             End If
         Next
 
@@ -468,49 +456,3 @@ Public Class Query
 
 End Class
 
-Public Class QItems
-    Inherits List(Of QItem)
-
-    Public Overloads Function Add(Optional ByVal Name As String = EmptyString, Optional ByVal Value As String = EmptyString, Optional ByVal Type As QItem.Types = QItem.Types.FIELD) As QItems
-        Me.Add(New QItem(Name, Value, Type))
-        Return Me
-    End Function
-End Class
-
-Public Class QItem
-    Public Property Name As String = String.Empty
-    Public Property Value As String = String.Empty
-    Public Property Type As Types = Zero
-
-    Public Enum Types
-        FIELD = 1
-        TOP = 2
-        MAX = 3
-        WHERE_AND = 4
-        WHERE_AND_NOT = 5
-        WHERE_OR = 6
-        WHERE_OR_NOT = 7
-        WHERE_IN = 8
-        WHERE_NOT_IN = 9
-        WHERE_FREE = 10
-        WHERE_LIKE = 11
-        WHERE_NOT_LIKE = 12
-        GROUP_BY = 13
-        JOIN_INNER = 14
-        JOIN_LEFT = 15
-        JOIN_RIGHT = 16
-        ORDER_BY_ASC = 17
-        ORDER_BY_DESC = 18
-    End Enum
-
-    Public Sub New()
-
-    End Sub
-
-    Public Sub New(ByVal Name As String, Optional ByVal Value As String = EmptyString, Optional ByVal Type As Types = Types.FIELD)
-        Me.Name = Name
-        Me.Value = Value
-        Me.Type = Type
-    End Sub
-
-End Class
