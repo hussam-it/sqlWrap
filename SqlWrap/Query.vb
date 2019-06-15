@@ -72,6 +72,7 @@ Public Class Query
         Catch Dbex As SqlException
             Throw New Exception(Dbex.Message)
         End Try
+        Me.DataTable = dt
 
         Return dt
     End Function
