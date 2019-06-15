@@ -39,11 +39,6 @@ Public Class Query
         DELETE = 4
     End Enum
 
-    Public Enum RenderTypes
-        WITH_NAME = 1
-        WITHOUT_NAME = 2
-    End Enum
-
     Public Sub Clear()
         Me.Items.Clear()
         Me.Tables.Clear()
@@ -191,7 +186,7 @@ Public Class Query
         Return FieldValue
     End Function
 
-    Private Function RenderFieldValue(ByVal QItem As QItem, Optional ByVal RenderType As RenderTypes = RenderTypes.WITH_NAME) As String
+    Private Function RenderFieldValue(ByVal QItem As QItem) As String
         Dim FieldName As String = QItem.Name
         Dim FieldValue As String = QItem.Value
         Dim FieldTable As String = String.Empty
@@ -206,15 +201,16 @@ Public Class Query
 
             FieldValue = Me.GetFieldValue(FieldTable, FieldName, FieldValue, QItem)
 
-            Select Case RenderType
-                Case RenderTypes.WITH_NAME
+            Select Case Me.Type
+                Case Types.INSERT
+                    Return FieldValue
+                Case Else
                     If QItem.Type = QItem.Types.WHERE_LIKE Then
                         Return FieldTable & "." & FieldName & " LIKE " & FieldValue
                     Else
                         Return FieldTable & "." & FieldName & QItem.GetOperatorWord & FieldValue
                     End If
-                Case RenderTypes.WITHOUT_NAME
-                    Return FieldValue
+
             End Select
 
         Catch ex As Exception
@@ -328,7 +324,7 @@ Public Class Query
 
         For Each QItem As QItem In Me.Items
             If QItem.Type = QItem.Types.FIELD Then
-                StatmentString &= Me.RenderFieldValue(QItem, RenderTypes.WITHOUT_NAME) & ","
+                StatmentString &= Me.RenderFieldValue(QItem) & ","
             End If
         Next
 
