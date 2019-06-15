@@ -13,6 +13,8 @@ Public Class Form1
             .Items.Add(New ListItem With {.Text = "Query Customer Table (Join with Orders)", .ID = 4})
             .Items.Add(New ListItem With {.Text = "Query Customer Table (Like)", .ID = 8})
             .Items.Add(New ListItem With {.Text = "Query Customer Table (Free)", .ID = 9})
+            .Items.Add(New ListItem With {.Text = "Query Customer Table (In)", .ID = 10})
+            .Items.Add(New ListItem With {.Text = "Query Customer Table (IsNull)", .ID = 11})
             .Items.Add(New ListItem With {.Text = "Update Customer Table", .ID = 5})
             .Items.Add(New ListItem With {.Text = "Insert Into Customer Table", .ID = 6})
             .Items.Add(New ListItem With {.Text = "Delete From Customer Table", .ID = 7})
@@ -40,6 +42,10 @@ Public Class Form1
                 Operation_08()
             Case 9
                 Operation_09()
+            Case 10
+                Operation_10()
+            Case 11
+                Operation_11()
         End Select
     End Sub
 
@@ -292,6 +298,74 @@ Public Class Form1
             End With
 
             With Database.Table.Query.RunQuery
+                Label1.Text = Database.Query.StatmentString
+                Label3.ForeColor = Color.DarkGreen
+
+                If .Rows.IsEmpty Then
+                    DataGridView1.DataSource = Nothing
+                    Label3.Text = "Result: Nothing"
+                Else
+                    DataGridView1.DataSource = Database.Query.DataTable
+                    Label3.Text = "Result: Done"
+                End If
+            End With
+
+        Catch ex As Exception
+            Label3.ForeColor = Color.Red
+            Label3.Text = "Result: Error """ & ex.Message & """"
+        Finally
+            SqlWrap.Database.DisConnect(Database)
+        End Try
+    End Sub
+
+    Private Sub Operation_10()
+        Dim Database As New Database(Me.ConnString)
+        Try
+            Database.Table.Name = "Customers"
+            Database.Table.AliasName = "cust"
+            With Database.Table.Query.Items
+                .Add("cust.CustomerId")
+                .Add("cust.CompanyName")
+                .Add("cust.ContactName")
+                .Add("cust.City")
+                .Add("cust.City", "'London','Berlin'", QItem.Types.WHERE_IN)
+            End With
+
+            With Database.Table.Query.RunQuery
+                Label1.Text = Database.Query.StatmentString
+                Label3.ForeColor = Color.DarkGreen
+
+                If .Rows.IsEmpty Then
+                    DataGridView1.DataSource = Nothing
+                    Label3.Text = "Result: Nothing"
+                Else
+                    DataGridView1.DataSource = Database.Query.DataTable
+                    Label3.Text = "Result: Done"
+                End If
+            End With
+
+        Catch ex As Exception
+            Label3.ForeColor = Color.Red
+            Label3.Text = "Result: Error """ & ex.Message & """"
+        Finally
+            SqlWrap.Database.DisConnect(Database)
+        End Try
+    End Sub
+
+    Private Sub Operation_11()
+        Dim Database As New Database(Me.ConnString)
+        Try
+            Database.Table.Name = "Customers"
+            Database.Table.AliasName = "cust"
+            With Database.Table.Query.Items
+                .Add("cust.CustomerId")
+                .Add("cust.CompanyName")
+                .Add("cust.ContactName")
+                .Add("cust.City")
+                .Add("cust.Fax", , QItem.Types.WHERE_IS_NULL)
+            End With
+
+            With Database.Table.Query.RunQuery()
                 Label1.Text = Database.Query.StatmentString
                 Label3.ForeColor = Color.DarkGreen
 
