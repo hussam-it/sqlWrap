@@ -46,3 +46,10 @@ It is a winform project using the **"Northwind"** database and it must be instal
 You cand download this database from the following link:
 
 https://github.com/Microsoft/sql-server-samples/tree/master/samples/databases/northwind-pubs
+
+## Documentation:
+
+Please refer to the following explanation article:
+
+https://www.codeproject.com/Articles/5061289/SQL-Wrapping-Class
+
