@@ -21,7 +21,7 @@ Main development stream is web based applications.
 
 Very like the similarity of Life and programming, Specially this one:
 
-https://notec1.wordpress.com/2017/04/12/life-programming-view/
+#### https://notec1.wordpress.com/2017/04/12/life-programming-view/
 
 
 ## Features:
